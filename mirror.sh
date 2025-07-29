@@ -11,6 +11,7 @@ trap cleanup RETURN EXIT
 
 function cleanup() {
   rm "$TMP_SYSTEM_PACMAN_PACKAGES" "$TMP_SYSTEM_AUR_PACKAGES" "$TMP_PACMAN_CONFIG" "$TMP_AUR_CONFIG" &>/dev/null
+  rm /tmp/pacman_tmp_*
 }
 
 function _filter_aur_programs() {
@@ -28,17 +29,16 @@ function _read_config() {
   local package=$1 # pacman, aur, flatpak
   tmp_file=$(mktemp /tmp/pacman_tmp_XXX)
 
-  [[ ! -d "$MIRROR_DIR/$package" ]] && mkdir -p "$MIRROR_DIR/$package"
-  [[ ! -d "$MIRROR_DIR/profiles/$MIRROR_PROFILE/$package" ]] && mkdir -p "$MIRROR_DIR/profiles/$MIRROR_PROFILE/$package"
+  [[ ! -d "$MIRROR_DIR/profiles/$MIRROR_PROFILE" ]] && mkdir -p "$MIRROR_DIR/profiles/$MIRROR_PROFILE"
 
-  mapfile -t pacman_files < <(find -L "$MIRROR_DIR/profiles/$MIRROR_PROFILE/$package" -type f -iname "*.$package")
+  mapfile -t pacman_files < <(find -L "$MIRROR_DIR/profiles/$MIRROR_PROFILE" -type f -iname "*.$package")
 
   if [[ ${#pacman_files[@]} -eq 0 ]]; then
     return 1
   fi
 
   cat "${pacman_files[@]}" |
-    sed 's/^[[:space:]]*//;s/[[:space:]]*$//' |
+    sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/#.*$//' |
     grep -v '^$' |
     sort -u >"$tmp_file"
 
@@ -65,17 +65,14 @@ function _install_pacman() {
 
 function _remove_packages() {
   local pkgs tmp_file
-  local comm=$1
   local package=$2
-  tmp_file=$(mktemp /tmp/pacman_tmp_XXX)
 
-  if [ "$package" == "AUR" ]; then
-    pkgs=$(comm "-$comm" "$TMP_AUR_CONFIG" "$TMP_SYSTEM_AUR_PACKAGES")
+  if [ "$package" == "aur" ]; then
+    pkgs=$(comm -13 "$TMP_AUR_CONFIG" "$TMP_SYSTEM_AUR_PACKAGES")
   elif [ "$package" == "pacman" ]; then
-    comm "-$comm" "$TMP_PACMAN_CONFIG" "$TMP_SYSTEM_PACMAN_PACKAGES" >"$tmp_file"
-    pkgs=$(comm "-$comm" "$TMP_SYSTEM_AUR_PACKAGES" "$tmp_file")
-    rm "$tmp_file"
+    pkgs=$(comm -13 "$TMP_PACMAN_CONFIG" "$TMP_SYSTEM_PACMAN_PACKAGES")
   fi
+
   echo -e "\nRemoving unused $package packages"
   if [[ -n "$pkgs" ]]; then
     # shellcheck disable=SC2086
@@ -106,14 +103,14 @@ function main() {
   _read_config pacman && _install_pacman
   _read_config aur && _install_aur
   _remove_packages 13 pacman
-  _remove_packages 13 AUR
+  _remove_packages 13 aur
 
-  leftover=$(pacman -Qdtq)
-  [[ -n "$leftover" ]] && {
-    echo -e "\nRemoving leftovers\n"
-    # shellcheck disable=SC2086
-    sudo pacman -Rns $leftover
-  }
+  # leftover=$(pacman -Qdtq)
+  # [[ -n "$leftover" ]] && {
+  #   echo -e "\nRemoving leftovers\n"
+  #   # shellcheck disable=SC2086
+  #   sudo pacman -Rns $leftover
+  # }
 }
 
 while getopts ":h-p:" opt; do
