@@ -11,7 +11,6 @@ trap cleanup RETURN EXIT
 
 function cleanup() {
   rm "$TMP_SYSTEM_PACMAN_PACKAGES" "$TMP_SYSTEM_AUR_PACKAGES" "$TMP_PACMAN_CONFIG" "$TMP_AUR_CONFIG" &>/dev/null
-  rm /tmp/pacman_tmp_*
 }
 
 function _filter_aur_programs() {
@@ -33,20 +32,21 @@ function _read_config() {
 
   mapfile -t pacman_files < <(find -L "$MIRROR_DIR/profiles/$MIRROR_PROFILE" -type f -iname "*.$package")
 
-  if [[ ${#pacman_files[@]} -eq 0 ]]; then
-    return 1
-  fi
+  [[ ${#pacman_files[@]} -eq 0 ]] && return 1
 
   cat "${pacman_files[@]}" |
     sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/#.*$//' |
     grep -v '^$' |
     sort -u >"$tmp_file"
 
-  if [ "$package" == "pacman" ]; then
+  case "$package" in
+  pacman)
     mv "$tmp_file" "$TMP_PACMAN_CONFIG"
-  elif [ "$package" == "aur" ]; then
+    ;;
+  aur)
     mv "$tmp_file" "$TMP_AUR_CONFIG"
-  fi
+    ;;
+  esac
 
   return 0
 }
@@ -55,62 +55,58 @@ function _install_pacman() {
   local pkgs
   pkgs=$(comm -23 "$TMP_PACMAN_CONFIG" "$TMP_SYSTEM_PACMAN_PACKAGES")
   echo -e "Installing pacman packages"
-  if [[ -n "$pkgs" ]]; then
-    # shellcheck disable=SC2086
+
+  # shellcheck disable=SC2086
+  [[ -n "$pkgs" ]] && {
     sudo pacman -S --needed $pkgs || true
-  else
-    echo " there is nothing to do"
-  fi
+    return 0
+  }
+  echo " there is nothing to do"
 }
 
 function _remove_packages() {
   local pkgs tmp_file
   local package=$2
 
-  if [ "$package" == "aur" ]; then
-    pkgs=$(comm -13 "$TMP_AUR_CONFIG" "$TMP_SYSTEM_AUR_PACKAGES")
-  elif [ "$package" == "pacman" ]; then
+  case "$package" in
+  pacman)
     pkgs=$(comm -13 "$TMP_PACMAN_CONFIG" "$TMP_SYSTEM_PACMAN_PACKAGES")
-  fi
+    ;;
+  aur)
+    pkgs=$(comm -13 "$TMP_AUR_CONFIG" "$TMP_SYSTEM_AUR_PACKAGES")
+    ;;
+  esac
 
   echo -e "\nRemoving unused $package packages"
-  if [[ -n "$pkgs" ]]; then
-    # shellcheck disable=SC2086
+  # shellcheck disable=SC2086
+  [[ -n "$pkgs" ]] && {
     sudo pacman -Rns $pkgs || true
-  else
-    echo " there is nothing to do"
-  fi
+    return 0
+  }
+  echo " there is nothing to do"
 }
 
 function _install_aur() {
   local pkgs
   pkgs=$(comm -23 "$TMP_AUR_CONFIG" "$TMP_SYSTEM_AUR_PACKAGES")
   echo -e "\nInstalling AUR packages"
-  if [[ -n "$pkgs" ]]; then
-    # shellcheck disable=SC2086
+
+  # shellcheck disable=SC2086
+  [[ -n "$pkgs" ]] && {
     paru -Sa $pkgs || true
-  else
-    echo " there is nothing to do"
-  fi
+    return 0
+  }
+  echo " there is nothing to do"
 }
 
 function main() {
-  local leftover
-
   [[ ! -d "$MIRROR_DIR" ]] && mkdir -p "$MIRROR_DIR"
 
-  _filter_aur_programs
+  _filter_aur_programs || echo "Error: Failed to get system packages!" && exit 1
   _read_config pacman && _install_pacman
   _read_config aur && _install_aur
   _remove_packages 13 pacman
   _remove_packages 13 aur
-
-  # leftover=$(pacman -Qdtq)
-  # [[ -n "$leftover" ]] && {
-  #   echo -e "\nRemoving leftovers\n"
-  #   # shellcheck disable=SC2086
-  #   sudo pacman -Rns $leftover
-  # }
 }
 
 while getopts ":h-p:" opt; do
@@ -141,19 +137,11 @@ while [[ $# -gt 0 ]]; do
     exit 0
     ;;
   *)
-    if [ -z "$MIRROR_PROFILE" ]; then
-      echo "Profile is not set"
-      exit 1
-    fi
+    [ -z "$MIRROR_PROFILE" ] && echo "Profile is not set" && exit 1
     main
     ;;
   esac
 done
 
-if [ -z "$1" ]; then
-  if [ -z "$MIRROR_PROFILE" ]; then
-    echo "Profile is not set"
-    exit 1
-  fi
-  main
-fi
+[ -z "$MIRROR_PROFILE" ] && echo "Profile is not set" && exit 1
+main
