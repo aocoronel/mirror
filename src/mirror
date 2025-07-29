@@ -9,6 +9,24 @@ MIRROR_DIR=$HOME/.local/share/mirror/
 
 trap cleanup RETURN EXIT
 
+function help() {
+  cat <<EOF
+Reflect packages in a configuration file to system packages
+
+Usage:
+  mirror FLAG <FLAG_INPUT>
+  mirror -h |  help
+
+Flags:
+-h              Displays this message and exits
+--help          Displays this message and exits
+-p <PROFILE>    Use profile
+
+Example:
+  mirror -p artix
+EOF
+}
+
 function cleanup() {
   rm "$TMP_SYSTEM_PACMAN_PACKAGES" "$TMP_SYSTEM_AUR_PACKAGES" "$TMP_PACMAN_CONFIG" "$TMP_AUR_CONFIG" &>/dev/null
 }
