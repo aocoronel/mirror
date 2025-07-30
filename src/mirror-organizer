@@ -4,8 +4,8 @@
 
 MIRROR_DIR=${MIRROR_DIR:-$HOME/.local/share/mirror/}
 MIRROR_LOG=${MIRROR_LOG:-$HOME/.local/state/mirror_state}
-MIRROR_PROFILE=${MIRROR_PROFILE:-}
-PACKAGE_DIR=${PACKAGE_DIR:-}
+MIRROR_PACKAGE_DIR=${MIRROR_PACKAGE_DIR:-$MIRROR_DIR/packages}
+IGNORE_FILE="$MIRROR_DIR/.mignore"
 
 function help() {
   cat <<EOF
@@ -19,7 +19,6 @@ Flags:
   -h, --help             Displays this message and exits
   -d, --directory        Use subdirectory to \$MIRROR_DIR
   -i, --ignore-file      Use ignore file
-  -p, --profile          Use profile
 EOF
 }
 
@@ -33,7 +32,7 @@ function getFiles() {
 
 function getChanges() {
   [[ ! -f "$MIRROR_LOG" ]] && touch "$MIRROR_LOG"
-  getFiles "$MIRROR_DIR/profiles/$MIRROR_PROFILE/" "-L" | sort >"$MIRROR_LOG.tmp"
+  getFiles "$MIRROR_DIR/profile/" "-L" | sort >"$MIRROR_LOG.tmp"
   echo -e "$(tput setaf 76)Changes:\n$(tput sgr0)"
   comm -3 "$MIRROR_LOG.tmp" "$MIRROR_LOG" | while IFS= read -r line; do
     case "$line" in
@@ -49,17 +48,14 @@ function getChanges() {
 }
 
 function insertLinks() {
-  getFiles "$MIRROR_DIR/$PACKAGE_DIR" | while IFS= read -r repo; do
-    mkdir -p "$MIRROR_DIR/profiles/$MIRROR_PROFILE/$(dirname "$repo")"
-    ln -sf "$MIRROR_DIR/$PACKAGE_DIR/$repo" "$MIRROR_DIR/profiles/$MIRROR_PROFILE/$repo"
+  getFiles "$MIRROR_DIR/$MIRROR_PACKAGE_DIR" | while IFS= read -r repo; do
+    mkdir -p "$MIRROR_DIR/profile/$(dirname "$repo")"
+    ln -sf "$MIRROR_DIR/$MIRROR_PACKAGE_DIR/$repo" "$MIRROR_DIR/profile/$repo"
   done
 }
 
 function main() {
-  [[ -z "$IGNORE_FILE" ]] && {
-    IGNORE_FILE="$MIRROR_DIR/mignore"
-    touch "$IGNORE_FILE"
-  }
+  touch "$IGNORE_FILE"
 
   insertLinks
   getChanges
@@ -67,7 +63,7 @@ function main() {
   echo -e "\n$(tput setaf 82)Done!$(tput sgr0)"
 }
 
-while getopts ":h-d:i:p:" opt; do
+while getopts ":h-d:i:" opt; do
   case "$opt" in
   h)
     help
@@ -77,13 +73,10 @@ while getopts ":h-d:i:p:" opt; do
     break
     ;;
   d)
-    PACKAGE_DIR=$OPTARG
+    MIRROR_PACKAGE_DIR=$OPTARG
     ;;
   i)
     IGNORE_FILE="$MIRROR_DIR/$OPTARG"
-    ;;
-  p)
-    MIRROR_PROFILE=$OPTARG
     ;;
   ?)
     echo "Error: Invalid option '-$OPTARG'" >&2
@@ -106,21 +99,12 @@ while [[ $# -gt 0 ]]; do
     ;;
   --directory)
     shift
-    PACKAGE_DIR=$1
-    ;;
-  --profile)
-    shift
-    MIRROR_PROFILE=$1
+    MIRROR_PACKAGE_DIR=$1
     ;;
   *)
     break
     ;;
   esac
 done
-
-[[ -z "$MIRROR_PROFILE" ]] && {
-  echo "Error: Profile not set!"
-  return 1
-}
 
 main
