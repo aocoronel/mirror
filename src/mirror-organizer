@@ -16,11 +16,10 @@ Usage:
   mirror-organizer -h | mirror-organizer --help
 
 Flags:
---help    Displays this message and exits
--d        Use subdirectory to \$MIRROR_DIR
--h        Displays this message and exits
--i        Use ignore file
--p        Use profile
+  -h, --help             Displays this message and exits
+  -d, --directory        Use subdirectory to \$MIRROR_DIR
+  -i, --ignore-file      Use ignore file
+  -p, --profile          Use profile
 EOF
 }
 
