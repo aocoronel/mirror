@@ -4,7 +4,7 @@
 
 MIRROR_DIR=${MIRROR_DIR:-$HOME/.local/share/mirror/}
 MIRROR_LOG=${MIRROR_LOG:-$HOME/.local/state/mirror_state}
-MIRROR_PACKAGE_DIR=${MIRROR_PACKAGE_DIR:-$MIRROR_DIR/packages}
+MIRROR_PACKAGE_DIR=${MIRROR_PACKAGE_DIR:-$packages}
 IGNORE_FILE="$MIRROR_DIR/.mignore"
 
 function help() {
@@ -31,7 +31,10 @@ function getFiles() {
 }
 
 function getChanges() {
-  [[ ! -f "$MIRROR_LOG" ]] && touch "$MIRROR_LOG"
+  [[ ! -f "$MIRROR_LOG" ]] && {
+    getFiles "$MIRROR_DIR/profile/" "-L" | sort >"$MIRROR_LOG"
+    return 0
+  }
   getFiles "$MIRROR_DIR/profile/" "-L" | sort >"$MIRROR_LOG.tmp"
   echo -e "$(tput setaf 76)Changes:\n$(tput sgr0)"
   comm -3 "$MIRROR_LOG.tmp" "$MIRROR_LOG" | while IFS= read -r line; do
