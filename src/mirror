@@ -6,13 +6,12 @@ TMP_PACMAN_CONFIG=$(mktemp /tmp/pacman_pkgs_config_XXX)
 TMP_AUR_CONFIG=$(mktemp /tmp/aur_pkgs_config_XXX)
 
 MIRROR_DIR=${MIRROR_DIR:-$HOME/.local/share/mirror/}
-MIRROR_PROFILE=${MIRROR_PROFILE:-}
 
 trap cleanup RETURN EXIT
 
 function help() {
   cat <<EOF
-Reflect packages in a configuration file to system packages
+Declare installed programs in Arch Linux
 
 Usage:
   mirror FLAG <FLAG_INPUT>
@@ -20,7 +19,6 @@ Usage:
 
 Flags:
   -h, --help                 Displays this message and exits
-  -p, --profile <PROFILE>    Use profile
 
 Example:
   mirror -p artix
@@ -46,9 +44,9 @@ function readConfig() {
   local package=$1 # pacman, aur, flatpak
   tmp_file=$(mktemp /tmp/pacman_tmp_XXX)
 
-  [[ ! -d "$MIRROR_DIR/profiles/$MIRROR_PROFILE" ]] && mkdir -p "$MIRROR_DIR/profiles/$MIRROR_PROFILE"
+  [[ ! -d "$MIRROR_DIR/profile" ]] && mkdir -p "$MIRROR_DIR/profile"
 
-  mapfile -t pacman_files < <(find -L "$MIRROR_DIR/profiles/$MIRROR_PROFILE" -type f -iname "*.$package")
+  mapfile -t pacman_files < <(find -L "$MIRROR_DIR/profile" -type f -iname "*.$package")
 
   [[ ${#pacman_files[@]} -eq 0 ]] && return 1
 
@@ -127,7 +125,7 @@ function main() {
   removePackages 13 aur
 }
 
-while getopts ":h-p:" opt; do
+while getopts ":h-" opt; do
   case "$opt" in
   h)
     help
@@ -135,9 +133,6 @@ while getopts ":h-p:" opt; do
     ;;
   -)
     break
-    ;;
-  p)
-    MIRROR_PROFILE=$OPTARG
     ;;
   ?)
     echo -e "$(tput setaf 192)Error: Invalid option '-$OPTARG'$(tput sgr0)" >&2
@@ -154,15 +149,10 @@ while [[ $# -gt 0 ]]; do
     help
     exit 0
     ;;
-  --profile)
-    shift
-    MIRROR_PROFILE=$1
-    ;;
   *)
     break
     ;;
   esac
 done
 
-[ -z "$MIRROR_PROFILE" ] && echo "Profile is not set" && exit 1
 main
