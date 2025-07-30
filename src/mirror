@@ -109,8 +109,14 @@ function installAur() {
 
   # shellcheck disable=SC2086
   [[ -n "$pkgs" ]] && {
-    paru -Sa $pkgs || true
-    return 0
+    [[ -x $(command -v paru) ]] && {
+      paru -Sa $pkgs
+      return 0
+    }
+    [[ -x $(command -v yay) ]] && {
+      yay -S --needed $pkgs
+      return 0
+    }
   }
   echo " there is nothing to do"
 }
