@@ -31,7 +31,7 @@ function cleanup() {
   rm "$TMP_SYSTEM_PACMAN_PACKAGES" "$TMP_SYSTEM_AUR_PACKAGES" "$TMP_PACMAN_CONFIG" "$TMP_AUR_CONFIG" &>/dev/null
 }
 
-function _filter_aur_programs() {
+function filterAurPrograms() {
   local tmp_file
   tmp_file=$(mktemp /tmp/pacman_tmp_XXX)
   pacman -Qqe >"$tmp_file"
@@ -41,7 +41,7 @@ function _filter_aur_programs() {
   rm "$tmp_file"
 }
 
-function _read_config() {
+function readConfig() {
   local pacman_files tmp_file
   local package=$1 # pacman, aur, flatpak
   tmp_file=$(mktemp /tmp/pacman_tmp_XXX)
@@ -69,7 +69,7 @@ function _read_config() {
   return 0
 }
 
-function _install_pacman() {
+function installPacman() {
   local pkgs
   pkgs=$(comm -23 "$TMP_PACMAN_CONFIG" "$TMP_SYSTEM_PACMAN_PACKAGES")
   echo "$(tput setaf 82)Installing pacman packages$(tput sgr0)"
@@ -82,7 +82,7 @@ function _install_pacman() {
   echo " there is nothing to do"
 }
 
-function _remove_packages() {
+function removePackages() {
   local pkgs tmp_file
   local package=$2
 
@@ -104,7 +104,7 @@ function _remove_packages() {
   echo " there is nothing to do"
 }
 
-function _install_aur() {
+function installAur() {
   local pkgs
   pkgs=$(comm -23 "$TMP_AUR_CONFIG" "$TMP_SYSTEM_AUR_PACKAGES")
   echo -e "$(tput setaf 82)\nInstalling AUR packages$(tput sgr0)"
@@ -120,11 +120,11 @@ function _install_aur() {
 function main() {
   [[ ! -d "$MIRROR_DIR" ]] && mkdir -p "$MIRROR_DIR"
 
-  _filter_aur_programs
-  _read_config pacman && _install_pacman
-  _read_config aur && _install_aur
-  _remove_packages 13 pacman
-  _remove_packages 13 aur
+  filterAurPrograms
+  readConfig pacman && installPacman
+  readConfig aur && installAur
+  removePackages 13 pacman
+  removePackages 13 aur
 }
 
 while getopts ":h-p:" opt; do
