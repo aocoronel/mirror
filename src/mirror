@@ -120,7 +120,7 @@ function _install_aur() {
 function main() {
   [[ ! -d "$MIRROR_DIR" ]] && mkdir -p "$MIRROR_DIR"
 
-  _filter_aur_programs || echo "Error: Failed to get system packages!" && exit 1
+  _filter_aur_programs
   _read_config pacman && _install_pacman
   _read_config aur && _install_aur
   _remove_packages 13 pacman
