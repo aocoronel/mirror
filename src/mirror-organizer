@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+# Usage: mirror-organizer -d packages -i mignore -p artix
+
+MIRROR_DIR=${MIRROR_DIR:-$HOME/.local/share/mirror/}
+MIRROR_LOG=${MIRROR_LOG:-$HOME/.local/state/mirror_state}
+MIRROR_PROFILE=${MIRROR_PROFILE:-}
+PACKAGE_DIR=${PACKAGE_DIR:-}
+
+function help() {
+  cat <<EOF
+Organizer Helper for Mirror Configuration
+
+Usage:
+  mirror-organizer FLAG <FLAG_INPUT>
+  mirror-organizer -h | mirror-organizer --help
+
+Flags:
+--help    Displays this message and exits
+-d        Use subdirectory to \$MIRROR_DIR
+-h        Displays this message and exits
+-i        Use ignore file
+-p        Use profile
+EOF
+}
+
+function getFiles() {
+  dir=$1
+  flag=${2:-}
+
+  cd "$dir" || return 1
+  fd "$flag" . -t f --ignore-file "$IGNORE_FILE"
+}
+
+function getChanges() {
+  [[ ! -f "$MIRROR_LOG" ]] && touch "$MIRROR_LOG"
+  getFiles "$MIRROR_DIR/profiles/$MIRROR_PROFILE/" "-L" | sort >"$MIRROR_LOG.tmp"
+  echo -e "$(tput setaf 76)Changes:\n$(tput sgr0)"
+  comm -3 "$MIRROR_LOG.tmp" "$MIRROR_LOG" | while IFS= read -r line; do
+    case "$line" in
+    $'\t'*)
+      echo "$(tput setaf 82)+${line#*$'\t'}$(tput sgr0)"
+      ;;
+    *)
+      echo "$(tput setaf 196)-$line$(tput sgr0)"
+      ;;
+    esac
+  done
+  mv -f "$MIRROR_LOG.tmp" "$MIRROR_LOG"
+}
+
+function insertLinks() {
+  getFiles "$MIRROR_DIR/$PACKAGE_DIR" | while IFS= read -r repo; do
+    mkdir -p "$MIRROR_DIR/profiles/$MIRROR_PROFILE/$(dirname "$repo")"
+    ln -sf "$MIRROR_DIR/$PACKAGE_DIR/$repo" "$MIRROR_DIR/profiles/$MIRROR_PROFILE/$repo"
+  done
+}
+
+function main() {
+  [[ -z "$IGNORE_FILE" ]] && {
+    IGNORE_FILE="$MIRROR_DIR/mignore"
+    touch "$IGNORE_FILE"
+  }
+
+  insertLinks
+  getChanges
+
+  echo -e "\n$(tput setaf 82)Done!$(tput sgr0)"
+}
+
+while getopts ":h-d:i:p:" opt; do
+  case "$opt" in
+  h)
+    help
+    exit 0
+    ;;
+  -)
+    break
+    ;;
+  d)
+    PACKAGE_DIR=$OPTARG
+    ;;
+  i)
+    IGNORE_FILE="$MIRROR_DIR/$OPTARG"
+    ;;
+  p)
+    MIRROR_PROFILE=$OPTARG
+    ;;
+  ?)
+    echo "Error: Invalid option '-$OPTARG'" >&2
+    exit 1
+    ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --help)
+    help
+    exit 0
+    ;;
+  --ignore-file)
+    shift
+    IGNORE_FILE="$MIRROR_DIR/$1"
+    ;;
+  --directory)
+    shift
+    PACKAGE_DIR=$1
+    ;;
+  --profile)
+    shift
+    MIRROR_PROFILE=$1
+    ;;
+  *)
+    break
+    ;;
+  esac
+done
+
+[[ -z "$MIRROR_PROFILE" ]] && {
+  echo "Error: Profile not set!"
+  return 1
+}
+
+main
