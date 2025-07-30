@@ -5,7 +5,8 @@ TMP_SYSTEM_AUR_PACKAGES=$(mktemp /tmp/aur_pkgs_XXX)
 TMP_PACMAN_CONFIG=$(mktemp /tmp/pacman_pkgs_config_XXX)
 TMP_AUR_CONFIG=$(mktemp /tmp/aur_pkgs_config_XXX)
 
-MIRROR_DIR=$HOME/.local/share/mirror/
+MIRROR_DIR=${MIRROR_DIR:-$HOME/.local/share/mirror/}
+MIRROR_PROFILE=${MIRROR_PROFILE:-}
 
 trap cleanup RETURN EXIT
 
@@ -18,9 +19,8 @@ Usage:
   mirror -h |  help
 
 Flags:
--h              Displays this message and exits
---help          Displays this message and exits
--p <PROFILE>    Use profile
+  -h, --help                 Displays this message and exits
+  -p, --profile <PROFILE>    Use profile
 
 Example:
   mirror -p artix
@@ -72,7 +72,7 @@ function _read_config() {
 function _install_pacman() {
   local pkgs
   pkgs=$(comm -23 "$TMP_PACMAN_CONFIG" "$TMP_SYSTEM_PACMAN_PACKAGES")
-  echo -e "Installing pacman packages"
+  echo "$(tput setaf 82)Installing pacman packages$(tput sgr0)"
 
   # shellcheck disable=SC2086
   [[ -n "$pkgs" ]] && {
@@ -95,7 +95,7 @@ function _remove_packages() {
     ;;
   esac
 
-  echo -e "\nRemoving unused $package packages"
+  echo -e "$(tput setaf 82)\nRemoving unused $package packages$(tput sgr0)"
   # shellcheck disable=SC2086
   [[ -n "$pkgs" ]] && {
     sudo pacman -Rns $pkgs || true
@@ -107,7 +107,7 @@ function _remove_packages() {
 function _install_aur() {
   local pkgs
   pkgs=$(comm -23 "$TMP_AUR_CONFIG" "$TMP_SYSTEM_AUR_PACKAGES")
-  echo -e "\nInstalling AUR packages"
+  echo -e "$(tput setaf 82)\nInstalling AUR packages$(tput sgr0)"
 
   # shellcheck disable=SC2086
   [[ -n "$pkgs" ]] && {
@@ -140,7 +140,7 @@ while getopts ":h-p:" opt; do
     MIRROR_PROFILE=$OPTARG
     ;;
   ?)
-    echo "Error: Invalid option '-$OPTARG'" >&2
+    echo -e "$(tput setaf 192)Error: Invalid option '-$OPTARG'$(tput sgr0)" >&2
     exit 1
     ;;
   esac
@@ -154,9 +154,12 @@ while [[ $# -gt 0 ]]; do
     help
     exit 0
     ;;
+  --profile)
+    shift
+    MIRROR_PROFILE=$1
+    ;;
   *)
-    [ -z "$MIRROR_PROFILE" ] && echo "Profile is not set" && exit 1
-    main
+    break
     ;;
   esac
 done
