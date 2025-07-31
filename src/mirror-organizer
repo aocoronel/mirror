@@ -40,10 +40,10 @@ function getChanges() {
   comm -3 "$MIRROR_LOG.tmp" "$MIRROR_LOG" | while IFS= read -r line; do
     case "$line" in
     $'\t'*)
-      echo "$(tput setaf 82)+${line#*$'\t'}$(tput sgr0)"
+      echo "$(tput setaf 196)-$line$(tput sgr0)"
       ;;
     *)
-      echo "$(tput setaf 196)-$line$(tput sgr0)"
+      echo "$(tput setaf 82)+${line#*$'\t'}$(tput sgr0)"
       ;;
     esac
   done
@@ -51,6 +51,7 @@ function getChanges() {
 }
 
 function insertLinks() {
+  rm -r "$MIRROR_DIR/profile"
   getFiles "$MIRROR_DIR/$MIRROR_PACKAGE_DIR" | while IFS= read -r repo; do
     mkdir -p "$MIRROR_DIR/profile/$(dirname "$repo")"
     ln -sf "$MIRROR_DIR/$MIRROR_PACKAGE_DIR/$repo" "$MIRROR_DIR/profile/$repo"
