@@ -18,7 +18,7 @@ You decide exactly what programs to be installed: If your configuration does not
 ## Installation
 
 ```bash
-git clone https://codeberg.org/janpstrunn/mirror
+git clone https://codeberg.org/anstrinn/mirror
 cd mirror
 mv src/mirror $HOME/.local/bin
 mv src/mirror-organizer $HOME/.local/bin
@@ -87,7 +87,7 @@ After that, it should be safe to start using `mirror` without the risk to compro
 
 #### Managing your configuration
 
-For a production example, look at my own configuration at [janpstrunn/mirror-config](https://codeberg.org/janpstrunn/mirror-config).
+For a production example, look at my own configuration at [anstrinn/mirror-config](https://codeberg.org/anstrinn/mirror-config).
 
 The configuration files should be like the generated files like above. Just plain text and the name of the package.
 
