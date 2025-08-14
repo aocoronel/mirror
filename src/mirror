@@ -141,7 +141,7 @@ while getopts ":h-" opt; do
     break
     ;;
   ?)
-    echo -e "$(tput setaf 192)Error: Invalid option '-$OPTARG'$(tput sgr0)" >&2
+    echo -e "$(tput setaf 192)ERROR$(tput sgr0): Invalid option '-$OPTARG'" >&2
     exit 1
     ;;
   esac
@@ -160,5 +160,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   esac
 done
+
+[ ! -d "$MIRROR_DIR" ] && {
+  echo "$(tput setaf 192)ERROR$(tput sgr0): Configuration not found"
+  exit 1
+}
 
 main
