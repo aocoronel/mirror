@@ -18,7 +18,7 @@ You decide exactly what programs to be installed: If your configuration does not
 ## Installation
 
 ```bash
-git clone https://codeberg.org/aocoronel/mirror
+git clone https://github.com/aocoronel/mirror
 cd mirror
 mv src/mirror $HOME/.local/bin
 mv src/mirror-organizer $HOME/.local/bin
@@ -50,7 +50,7 @@ The configuration directory is at `$HOME/.local/share/mirror/`, and usually you 
 There are three environment variables available:
 
 - `mirror` envs:
-  * The default directory for your config managed by `MIRROR_DIR`, default to `$HOME/.local/share/mirror/`
+  - The default directory for your config managed by `MIRROR_DIR`, default to `$HOME/.local/share/mirror/`
 - `mirror-organizer` envs:
   - `MIRROR_DIR` and `MIRROR_PROFILE`
   - To give a changelog of what programs were added and which were removed, a file is set in `MIRROR_LOG`, default to `$HOME/.local/state/mirror_state`
@@ -70,7 +70,7 @@ pacman -Qqe > "$HOME/.local/share/mirror/profile/packages.pacman"
 
 If you have AUR packages installed, you can split pacman packages from AUR ones. This one is a bit more elaborated:
 
-``` bash
+```bash
 sudo pacman -S $(pacman -Qqe) 2>&1 | rg "error:" | awk '{print $5}' > "$HOME/.local/share/mirror/profile/packages.aur"
 # Explanation:
 # 'sudo pacman -S $(pacman -Qqe)' will try to install all packages and will fail
