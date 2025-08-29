@@ -87,7 +87,7 @@ After that, it should be safe to start using `mirror` without the risk to compro
 
 #### Managing your configuration
 
-For a production example, look at my own configuration at [aocoronel/mirror-config](https://codeberg.org/aocoronel/mirror-config).
+For a production example, look at my own configuration at [aocoronel/mirror-config](https://github.com/aocoronel/mirror-config).
 
 The configuration files should be like the generated files like above. Just plain text and the name of the package.
 
