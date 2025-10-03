@@ -109,9 +109,10 @@ function help() {
   GREEN="\x1b[38;5;47m"
   RESET="\x1b[0m"
   printf "$GREEN Mirror Directory:$RESET %s\n" "$MIRROR_DIR"
+  IGNORE_FILE="${IGNORE_FILE:-$MIRROR_DIR/.mignore}"
   printf "$GREEN Loaded files:$RESET %s\n" "$(
-    find -L "$MIRROR_DIR/profile" -type f \( -iname "*.pacman" -o -iname "*.aur" \) \
-      -printf "%f\n" |
+    fd --follow --ignore-case -t f --ignore-file "$IGNORE_FILE" --extension pacman --extension aur . "$MIRROR_DIR/profile" |
+      xargs -n1 basename |
       sed -E 's/\.(pacman|aur)$//' |
       tr '\n' ' '
   )"
