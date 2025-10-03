@@ -27,18 +27,8 @@ chmod +x "$HOME/.local/bin/mirror" "$HOME/.local/bin/mirror-organizer"
 
 ## Usage
 
-```
-Declare installed programs in Arch Linux
-
-Usage:
-  mirror FLAG <FLAG_INPUT>
-  mirror -h |  help
-
-Flags:
-  -h, --help                 Displays this message and exits
-
-Example:
-  mirror -p artix
+```bash
+mirror
 ```
 
 ### Configuration
