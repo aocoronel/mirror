@@ -9,22 +9,6 @@ MIRROR_DIR=${MIRROR_DIR:-$HOME/.local/share/mirror/}
 
 trap cleanup RETURN EXIT
 
-function help() {
-  cat <<EOF
-Declare installed programs in Arch Linux
-
-Usage:
-  mirror FLAG <FLAG_INPUT>
-  mirror -h |  help
-
-Flags:
-  -h, --help                 Displays this message and exits
-
-Example:
-  mirror -p artix
-EOF
-}
-
 function cleanup() {
   rm "$TMP_SYSTEM_PACMAN_PACKAGES" "$TMP_SYSTEM_AUR_PACKAGES" "$TMP_PACMAN_CONFIG" "$TMP_AUR_CONFIG" &>/dev/null
 }
@@ -119,6 +103,18 @@ function installAur() {
     }
   }
   echo " there is nothing to do"
+}
+
+function help() {
+  GREEN="\x1b[38;5;47m"
+  RESET="\x1b[0m"
+  printf "$GREEN Mirror Directory:$RESET %s\n" "$MIRROR_DIR"
+  printf "$GREEN Loaded files:$RESET %s\n" "$(
+    find -L "$MIRROR_DIR/profile" -type f \( -iname "*.pacman" -o -iname "*.aur" \) \
+      -printf "%f\n" |
+      sed -E 's/\.(pacman|aur)$//' |
+      tr '\n' ' '
+  )"
 }
 
 function main() {
